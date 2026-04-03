@@ -13,6 +13,7 @@ async def worker(w: str, q: asyncio.Queue):
     except asyncio.CancelledError:
         print("Worker morto.")
 
+
 async def main():
     MAX_SIZE = 26
 
@@ -30,6 +31,7 @@ async def main():
 
     asyncio.gather(*tasks)
     print("Worker loop finalizado")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
