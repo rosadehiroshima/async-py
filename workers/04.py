@@ -17,13 +17,12 @@ MAX_CONSUMERS = 10
 async def producer(q: asyncio.Queue):
     log.debug("producer adicionando elementos na fila")
     for i in range(QUEUE_SIZE):
-        await q.put(i)
-        # await asyncio.sleep(random())
+        await q.put({"retries": 0, "item": i})
 
 
-async def process(num: int):
-    log.debug(f"Processando {num}")
-    if num == 7:
+async def process(data: dict):
+    log.debug(f"Processando {data["item"]} -- tentativa {data["retries"]}")
+    if data["item"] == 7:
         await asyncio.sleep(5)
     else:
         await asyncio.sleep(random())
@@ -59,7 +58,7 @@ async def main():
     await queue.join()
 
     # while not error_queue.empty():
-    #     await asyncio.sleep(.1)
+    #     await asyncio.sleep(0.1)
 
     # await error_queue.join()
 
