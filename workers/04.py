@@ -15,11 +15,12 @@ QUEUE_SIZE = 10
 MAX_CONSUMERS = 2
 
 
-async def producer(q: asyncio.Queue):
-    log.debug("producer adicionando elementos na fila")
+async def producer(queue: asyncio.Queue):
     for i in range(QUEUE_SIZE):
-        await q.put({"retries": 0, "data": i})
-
+        await queue.put({"retries": 0, "data": i})
+        await asyncio.sleep(.1)
+        log.debug(f"elemento {i} adicionado.")
+    
 
 async def process(item: dict):
     if item["data"] == 7:
@@ -63,8 +64,13 @@ async def consumer(consumer: str, queue: asyncio.Queue, error_queue: asyncio.Que
 async def main():
     queue = asyncio.Queue()  # consumer queue
     error_queue = asyncio.Queue()  # error queue
-    await producer(queue)
 
+    log.info("producer adicionando elementos na fila\n")
+    await producer(queue)
+    print("\n")
+    await asyncio.sleep(1)
+
+    log.info("iniciando processamento com consumers\n")
     tasks = [
         asyncio.create_task(consumer(f"C{n}", queue, error_queue))
         for n in range(MAX_CONSUMERS)
