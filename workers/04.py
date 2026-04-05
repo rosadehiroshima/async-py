@@ -1,4 +1,5 @@
 import asyncio
+from config import logger
 
 """
 O Problema: Um Producer coloca 10 números em uma asyncio.Queue. Um Consumer retira esses números para processar.
@@ -8,8 +9,19 @@ O Problema: Um Producer coloca 10 números em uma asyncio.Queue. Um Consumer ret
 3.  Seu código deve capturar a exceção de timeout, avisar que o "Item 7 falhou" e continuar processando o restante da fila sem travar o programa.
 """
 
+
+async def producer(q: asyncio.Queue):
+    pass
+
+
+async def consumer(q: asyncio.Queue):
+    pass
+
+
 async def main():
-    await asyncio.sleep(1)
+    pass
 
 if __name__ == "__main__":
-    print("Hello, world")
+    logger.info("Teste de producer/consumer iniciado")
+    asyncio.run(main())
+    logger.info("Teste de producer/consumer finalizado")
