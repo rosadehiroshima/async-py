@@ -18,4 +18,4 @@ structlog.configure(
     ]
 )
 
-logger = structlog.get_logger()
+log = structlog.get_logger()
