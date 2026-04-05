@@ -17,31 +17,44 @@ MAX_CONSUMERS = 10
 async def producer(q: asyncio.Queue):
     log.debug("producer adicionando elementos na fila")
     for i in range(QUEUE_SIZE):
-        await q.put({"retries": 0, "item": i})
+        await q.put({"retries": 0, "data": i})
 
 
-async def process(data: dict):
-    log.debug(f"Processando {data["item"]} -- tentativa {data["retries"]}")
-    if data["item"] == 7:
+async def process(item: dict):
+    log.debug(f"Processando {item['data']} -- tentativa {item['retries']}")
+    if item["data"] == 7:
         await asyncio.sleep(5)
+    elif item["data"] == 9:
+        await asyncio.sleep(9)
     else:
         await asyncio.sleep(random())
 
 
-async def consumer(c: str, q: asyncio.Queue, eq: asyncio.Queue):
+async def consumer(consumer: str, queue: asyncio.Queue, error_queue: asyncio.Queue):
     try:
         while True:
-            curr = await q.get()
+            item = await queue.get()
+            TIMEOUT = 2 ** item["retries"]
             try:
-                async with asyncio.timeout(2):
-                    await process(curr)
+                async with asyncio.timeout(TIMEOUT):
+                    await process(item)
+                    log.debug(f"item {item['data']} processado em consumer {consumer}")
             except asyncio.TimeoutError:
-                log.critical(f"erro de timeout ao processar {curr} em {c}")
-                await eq.put(curr)
+                item["retries"] += 1
+                if item["retries"] <= 3:
+                    await queue.put(item)
+                    log.error(
+                        f"erro de timeout ao processar {item['data']} em {consumer}"
+                    )
+                else:
+                    await error_queue.put(item)
+                    log.critical(
+                        f"item {item['data']} falhou definitivamente no consumer {consumer}"
+                    )
             finally:
-                q.task_done()
+                queue.task_done()
     except asyncio.CancelledError:
-        log.warning(f"consumer {c} encerrado.")
+        log.warning(f"consumer {consumer} encerrado.")
         raise
 
 
@@ -55,12 +68,8 @@ async def main():
         for n in range(MAX_CONSUMERS)
     ]
 
+    await error_queue.join()
     await queue.join()
-
-    # while not error_queue.empty():
-    #     await asyncio.sleep(0.1)
-
-    # await error_queue.join()
 
     log.info("graceful shutdown dos consumers")
     for t in tasks:
